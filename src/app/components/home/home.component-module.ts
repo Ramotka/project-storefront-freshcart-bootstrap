@@ -9,4 +9,4 @@ import { HomeComponent } from './home.component';
   providers: [],
   exports: [HomeComponent],
 })
-export class HomeComponentModule { }
+export class HomeComponentModule {}
