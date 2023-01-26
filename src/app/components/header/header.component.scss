@@ -1,0 +1,12 @@
+.show {
+  animation: slideIn 1s forwards;
+  }
+
+  @keyframes slideIn {
+   from {
+    transform: translate(-100%);
+   }
+   to {
+    transform: translate(0)
+   }
+  }
