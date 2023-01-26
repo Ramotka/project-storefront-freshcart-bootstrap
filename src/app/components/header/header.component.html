@@ -32,7 +32,7 @@
                 type="button"
                 aria-controls="navbar-default"
                 aria-label="Toggle navigation"
-                (click)="showSideMenu(true)"
+                (click)="showSideMenu()"
               >
                 <span class="icon-bar top-bar mt-0"></span>
                 <span class="icon-bar middle-bar"></span>
@@ -67,7 +67,7 @@
         <div
           class="d-flex justify-content-between align-items-center mb-2 d-block d-lg-none"
         >
-          <a routerLink="/"
+          <a routerLink="/" (click)="showSideMenu()"
             ><img
               src="assets/images/logo/freshcart-logo.svg"
               alt="eCommerce HTML Template"
@@ -76,7 +76,7 @@
             type="button"
             class="btn-close"
             aria-label="Close"
-            (click)="showSideMenu(false)"
+            (click)="showSideMenu()"
           ></button>
         </div>
         <div class="d-block">
@@ -86,7 +86,7 @@
                 class="nav-link"
                 [routerLink]="'/categories/' + item.id"
                 role="button"
-                (click)="showSideMenu(false)"
+                (click)="showSideMenu()"
                 >{{ item.name }}</a
               >
             </li>

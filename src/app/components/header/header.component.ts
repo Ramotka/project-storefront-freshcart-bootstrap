@@ -24,7 +24,8 @@ export class HeaderComponent {
 
   constructor(private _categoriesService: CategoriesService) {}
 
-  showSideMenu(showSideMenu: boolean): void {
-    this._showSideMenuSubject.next(showSideMenu);
+  showSideMenu(): void {
+    const previousSubject = this._showSideMenuSubject.value;
+    this._showSideMenuSubject.next(!previousSubject);
   }
 }
