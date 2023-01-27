@@ -11,6 +11,8 @@ import { StoreModel } from '../../models/store.model';
 import { ProductModel } from '../../models/product.model';
 import { StoresService } from '../../services/stores.service';
 import { ProductsService } from '../../services/products.service';
+import { ProductByStoreQueryModel } from '../../query-models/product-by-store.query-model';
+
 
 @Component({
   selector: 'app-store-products',
@@ -26,9 +28,10 @@ export class StoreProductsComponent {
     this._productsService.getAllProducts(),
   ]).pipe(
     map(([store, products]: [StoreModel, ProductModel[]]) => {
-      const productsByStore: ProductModel[] = products.filter((product) =>
-        product.storeIds.includes(store.id)
-      );
+
+      const productsByStore = products.reduce((a: ProductByStoreQueryModel[], c: ProductModel) => {
+        return c.storeIds.includes(store.id) ? [...a, {productName: c.name, productImage: c.imageUrl}] : a
+      }, [] as ProductByStoreQueryModel[]);
 
       return {
         name: store.name,
@@ -36,8 +39,8 @@ export class StoreProductsComponent {
         distance: store.distanceInMeters / 1000,
         products: productsByStore
           .map((productByStore) => ({
-            productName: productByStore.name,
-            productImage: productByStore.imageUrl,
+            productName: productByStore.productName,
+            productImage: productByStore.productImage.substring(1),
           }))
           .slice(0, 6),
       };
