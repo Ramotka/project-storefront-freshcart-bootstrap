@@ -1,1 +1,82 @@
+<section *ngIf="storeDetails$ | async as store" class="my-lg-14 my-8">
+  <div class="container">
+    <div class="d-flex justify-content-between">
+      <ng-container
+        ><div class="d-flex flex-column">
+          <div>
+            <!-- img -->
+            <img
+              [src]="store.logo"
+              [alt]="store.name"
+              class="rounded-circle icon-shape icon-xxl"
+            />
+          </div>
+          <!-- heading -->
+          <div class="mt-4">
+            <h1 class="mb-1 h4">{{ store.name }}</h1>
+            <div class="small text-muted">
+              <span
+                >It's only {{ store.distance | number : "1.0-1" }} km away from
+                you!</span
+              >
+            </div>
+          </div>
+        </div></ng-container
+      >
+      <div class="mb-8 bg-light d-lg-flex justify-content-lg-between rounded">
+        <div class="align-self-center p-8">
+          <div class="mb-3">
+            <h5 class="mb-0 fw-bold">{{ store.name }}</h5>
+            <p class="mb-0 text-muted">
+              Whatever the occasion, we've got you covered.
+            </p>
+          </div>
+          <div class="position-relative">
+            <input [placeholder]="store.name" class="form-control" />
+            <span class="position-absolute end-0 top-0 mt-2 me-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="feather feather-search"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+          </div>
+        </div>
+        <div class="py-4">
+          <img
+            src="assets/images/svg-graphics/store-graphics.svg"
+            alt=""
+            class="img-fluid"
+          />
+        </div>
+      </div>
+    </div>
+    <h4 class="mt-13">{{ store.name }} products:</h4>
+    <div class="d-flex">
+      <div *ngFor="let item of store.products">
+        <a [routerLink]="" class="text-decoration-none text-inherit"
+          ><!-- card -->
 
+          <div class="card-body text-center py-5">
+            <!-- img --><img
+              [src]="item.productImage"
+              [alt]="item.productName"
+              class="mb-3"
+            /><!-- text -->
+            <div class="text-truncate">{{ item.productName }}</div>
+          </div></a
+        >
+      </div>
+    </div>
+  </div>
+</section>
