@@ -3,7 +3,7 @@ import {
   Component,
   ViewEncapsulation,
 } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Observable, combineLatest, from, of } from 'rxjs';
 import {
@@ -15,7 +15,7 @@ import {
   take,
   tap,
 } from 'rxjs/operators';
-import { SortProductsOptionsQueryModel } from 'src/app/query-models/sort-products-options.query-model';
+import { SortProductsOptionsQueryModel } from '../../query-models/sort-products-options.query-model';
 import { CategoryModel } from '../../models/category.model';
 import { ProductModel } from '../../models/product.model';
 import { CategoriesService } from '../../services/categories.service';
@@ -33,6 +33,11 @@ interface PageParams {
 })
 export class CategoryProductsComponent {
   readonly sortOption: FormControl = new FormControl('fvDesc');
+  readonly filterByPrice: FormGroup = new FormGroup({
+    priceFrom: new FormControl(),
+    priceTo: new FormControl(),
+  });
+
   readonly sortOptions$: Observable<SortProductsOptionsQueryModel[]> = of([
     { name: 'Featured', value: 'fvDesc' },
     { name: 'Price: Low to High', value: 'priceAsc' },
@@ -86,33 +91,41 @@ export class CategoryProductsComponent {
   readonly products$: Observable<ProductModel[]> = combineLatest([
     this.allProductsInCategory$,
     this.sortOption.valueChanges.pipe(startWith('fvDesc')),
+    this.filterByPrice.valueChanges.pipe(
+      startWith({ priceFrom: 0, priceTo: 9999 }),
+      shareReplay(1)
+    ),
     this.pageParams$,
   ]).pipe(
-    map(
-      ([products, sortOption, params]: [ProductModel[], string, PageParams]) =>
-        products
-          .sort((a, b) => {
-            if (sortOption === 'fvDesc') {
-              return a.featureValue < b.featureValue ? 1 : -1;
-            }
+    map(([products, sortOption, filterByPrice, params]) =>
+      products
+        .slice(
+          (params.pageNumber - 1) * params.pageSize,
+          params.pageNumber * params.pageSize
+        )
+        .sort((a, b) => {
+          if (sortOption === 'fvDesc') {
+            return a.featureValue < b.featureValue ? 1 : -1;
+          }
 
-            if (sortOption === 'priceAsc') {
-              return a.price > b.price ? 1 : -1;
-            }
+          if (sortOption === 'priceAsc') {
+            return a.price > b.price ? 1 : -1;
+          }
 
-            if (sortOption === 'priceDesc') {
-              return a.price < b.price ? 1 : -1;
-            }
+          if (sortOption === 'priceDesc') {
+            return a.price < b.price ? 1 : -1;
+          }
 
-            if (sortOption === 'rvDesc') {
-              return a.ratingValue < b.ratingValue ? 1 : -1;
-            }
-            return 0;
-          })
-          .slice(
-            (params.pageNumber - 1) * params.pageSize,
-            params.pageNumber * params.pageSize
-          )
+          if (sortOption === 'rvDesc') {
+            return a.ratingValue < b.ratingValue ? 1 : -1;
+          }
+          return 0;
+        })
+
+        .filter(
+          (product) => product
+          // in progress
+        )
     )
   );
 

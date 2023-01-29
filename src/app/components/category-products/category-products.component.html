@@ -17,6 +17,20 @@
             <i class="feather-icon icon-chevron-right"></i>
           </li>
         </ul>
+        <form [formGroup]="filterByPrice">
+          <h5 class="mt-8 mb-4">Price</h5>
+          <input
+            type="text"
+            formControlName="priceFrom"
+            placeholder="Price From"
+            class="form-control mb-3"
+          /><input
+            type="text"
+            formControlName="priceTo"
+            placeholder="Price To"
+            class="form-control"
+          />
+        </form>
       </div>
       <div
         *ngIf="allProductsInCategory$ | async as allProducts"
