@@ -1,1 +1,143 @@
+<section class="my-lg-14 my-8">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-3 col-md-4 mb-6 mb-md-0">
+        <h5>Categories</h5>
+        <ul class="navbar-nav">
+          <li
+            *ngFor="let item of allCategories$ | async"
+            class="nav-item fw-semibold border-bottom d-flex align-items-center justify-content-between"
+          >
+            <a
+              class="nav-link"
+              [routerLink]="'/categories/' + item.id"
+              role="button"
+              >{{ item.name }}</a
+            >
+            <i class="feather-icon icon-chevron-right"></i>
+          </li>
+        </ul>
+      </div>
+      <div
+        *ngIf="allProductsInCategory$ | async as allProducts"
+        class="col-lg-9 col-md-12"
+      >
+        <div *ngIf="products$ | async as products">
+          <section *ngIf="categoryDetails$ | async as category" class="ms-8">
+            <div class="card mb-4 bg-light border-0">
+              <div class="card-body p-9">
+                <h2 class="mb-0 fs-1">{{ category.name }}</h2>
+              </div>
+            </div>
+            <div class="d-lg-flex justify-content-between align-items-center">
+              <div class="mb-3 mb-lg-0">
+                <p class="mb-0">
+                  <span class="text-success">{{ allProducts.length }}</span>
+                  Products found
+                </p>
+              </div>
 
+              <div class="d-flex align-items-center mt-2 mt-lg-0">
+                <p class="my-0 me-2">Sort by:</p>
+                <div>
+                  <select class="form-select" [formControl]="sortOption">
+                    <option
+                      *ngFor="let option of sortOptions$ | async"
+                      [value]="option.value"
+                    >
+                      {{ option.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-4 row-cols-1 mt-2">
+              <div *ngFor="let item of products" class="col">
+                <div class="card card-product">
+                  <!-- card body -->
+                  <div class="card-body">
+                    <div class="row align-items-center">
+                      <!-- col -->
+                      <div class="col-md-4 col-12">
+                        <div class="text-center position-relative">
+                          <!-- img --><img
+                            [src]="item.imageUrl"
+                            [alt]="item.name"
+                            class="mb-3 img-fluid"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-8 col-12 flex-grow-1">
+                        <!-- heading -->
+                        <div class="text-small mb-1">
+                          {{ category.name }}
+                        </div>
+                        <h2 class="fs-6">
+                          {{ item.name }}
+                        </h2>
+                        <div>
+                          <!-- rating --><small class="text-warning">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-half"></i
+                          ></small>
+                          <span class="text-muted small"
+                            >{{ item.ratingValue }}({{
+                              item.ratingCount
+                            }})</span
+                          >
+                        </div>
+                        <div class="mt-6">
+                          <!-- price -->
+                          <div>
+                            <span class="text-dark">{{
+                              item.price | currency
+                            }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-5" *ngIf="pageParams$ | async as params">
+              <nav class="col">
+                <h6>Limit</h6>
+                <ul class="pagination">
+                  <li class="page-item" *ngFor="let item of pageSizes$ | async">
+                    <a
+                      class="page-link"
+                      [ngClass]="{ active: params.pageSize === item }"
+                      (click)="selectPageSize(item)"
+                      >{{ item }}</a
+                    >
+                  </li>
+                </ul>
+              </nav>
+              <nav class="col">
+                <h6>Pagination</h6>
+                <ul class="pagination">
+                  <li
+                    class="page-item"
+                    *ngFor="let item of pageNumbers$ | async"
+                  >
+                    <a
+                      class="page-link"
+                      [ngClass]="{ active: params.pageNumber === item }"
+                      (click)="selectPageNumber(item)"
+                      >{{ item }}</a
+                    >
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
