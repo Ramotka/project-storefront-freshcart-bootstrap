@@ -118,36 +118,42 @@
                 </div>
               </div>
             </div>
-            <div class="row mt-5" *ngIf="pageParams$ | async as params">
-              <nav class="col">
-                <h6>Limit</h6>
-                <ul class="pagination">
-                  <li class="page-item" *ngFor="let item of pageSizes$ | async">
-                    <a
-                      class="page-link"
-                      [ngClass]="{ active: params.pageSize === item }"
-                      (click)="selectPageSize(item)"
-                      >{{ item }}</a
+
+            <div *ngIf="pageParams$ | async as params">
+              <div *ngIf="allProducts.length > 0" class="row mt-5">
+                <nav class="col">
+                  <h6>Limit</h6>
+                  <ul class="pagination">
+                    <li
+                      class="page-item"
+                      *ngFor="let item of pageSizes$ | async"
                     >
-                  </li>
-                </ul>
-              </nav>
-              <nav class="col">
-                <h6>Pagination</h6>
-                <ul class="pagination">
-                  <li
-                    class="page-item"
-                    *ngFor="let item of pageNumbers$ | async"
-                  >
-                    <a
-                      class="page-link"
-                      [ngClass]="{ active: params.pageNumber === item }"
-                      (click)="selectPageNumber(item)"
-                      >{{ item }}</a
+                      <a
+                        class="page-link"
+                        [ngClass]="{ active: params.pageSize === item }"
+                        (click)="selectPageSize(item)"
+                        >{{ item }}</a
+                      >
+                    </li>
+                  </ul>
+                </nav>
+                <nav class="col">
+                  <h6>Pagination</h6>
+                  <ul class="pagination">
+                    <li
+                      class="page-item"
+                      *ngFor="let item of pageNumbers$ | async"
                     >
-                  </li>
-                </ul>
-              </nav>
+                      <a
+                        class="page-link"
+                        [ngClass]="{ active: params.pageNumber === item }"
+                        (click)="selectPageNumber(item)"
+                        >{{ item }}</a
+                      >
+                    </li>
+                  </ul>
+                </nav>
+              </div>
             </div>
           </section>
         </div>
