@@ -7,6 +7,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { Observable, combineLatest, from, of } from 'rxjs';
 import {
+  debounceTime,
   filter,
   map,
   shareReplay,
@@ -20,11 +21,8 @@ import { CategoryModel } from '../../models/category.model';
 import { ProductModel } from '../../models/product.model';
 import { CategoriesService } from '../../services/categories.service';
 import { ProductsService } from '../../services/products.service';
+import { PageParamsQueryModel } from 'src/app/query-models/page-params.query-model';
 
-interface PageParams {
-  pageNumber: number;
-  pageSize: number;
-}
 @Component({
   selector: 'app-category-products',
   templateUrl: './category-products.component.html',
@@ -37,6 +35,10 @@ export class CategoryProductsComponent {
     priceFrom: new FormControl(),
     priceTo: new FormControl(),
   });
+
+readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueChanges.pipe(
+  startWith({ priceFrom: 0, priceTo: 9999 }), debounceTime(1000), shareReplay(1)
+);
 
   readonly sortOptions$: Observable<SortProductsOptionsQueryModel[]> = of([
     { name: 'Featured', value: 'fvDesc' },
@@ -66,7 +68,7 @@ export class CategoryProductsComponent {
     shareReplay(1)
   );
 
-  readonly pageParams$: Observable<PageParams> =
+  readonly pageParams$: Observable<PageParamsQueryModel> =
     this._activatedRoute.queryParams.pipe(
       map((params) => ({
         pageNumber: params['pageNumber']
@@ -77,8 +79,20 @@ export class CategoryProductsComponent {
       shareReplay(1)
     );
 
-  readonly pageNumbers$: Observable<number[]> = combineLatest([
+
+
+  readonly filteredProducts$: Observable<ProductModel[]> = combineLatest([
     this.allProductsInCategory$,
+    this.filterByPriceValueChanges$
+  ]).pipe(map(([products, filters]) =>
+  products
+    .filter((product) => filters.priceFrom ? product.price >= filters.priceFrom : product.price > 0)
+    .filter((product) => filters.priceTo ? product.price <= filters.priceTo : product.price < 9999 )
+  ), shareReplay(1))
+
+
+  readonly pageNumbers$: Observable<number[]> = combineLatest([
+    this.filteredProducts$,
     this.pageParams$,
   ]).pipe(
     map(([products, params]) => {
@@ -88,21 +102,16 @@ export class CategoryProductsComponent {
     })
   );
 
+
   readonly products$: Observable<ProductModel[]> = combineLatest([
-    this.allProductsInCategory$,
+    this.filteredProducts$,
     this.sortOption.valueChanges.pipe(startWith('fvDesc')),
-    this.filterByPrice.valueChanges.pipe(
-      startWith({ priceFrom: 0, priceTo: 9999 }),
-      shareReplay(1)
-    ),
     this.pageParams$,
   ]).pipe(
-    map(([products, sortOption, filterByPrice, params]) =>
+    tap(([products, sortOption, params]) => this._includeParamsEdgeCases(params)),
+    map(([products, sortOption, params]) =>
       products
-        .slice(
-          (params.pageNumber - 1) * params.pageSize,
-          params.pageNumber * params.pageSize
-        )
+
         .sort((a, b) => {
           if (sortOption === 'fvDesc') {
             return a.featureValue < b.featureValue ? 1 : -1;
@@ -121,10 +130,9 @@ export class CategoryProductsComponent {
           }
           return 0;
         })
-
-        .filter(
-          (product) => product
-          // in progress
+        .slice(
+          (params.pageNumber - 1) * params.pageSize,
+          params.pageNumber * params.pageSize
         )
     )
   );
@@ -153,7 +161,7 @@ export class CategoryProductsComponent {
   }
 
   selectPageSize(limit: number): void {
-    combineLatest([this.pageParams$.pipe(take(1)), this.allProductsInCategory$])
+    combineLatest([this.pageParams$.pipe(take(1)), this.filteredProducts$])
       .pipe(
         tap(([params, products]) => {
           this._router.navigate([], {
@@ -168,5 +176,22 @@ export class CategoryProductsComponent {
         })
       )
       .subscribe();
+  }
+
+
+
+  private _includeParamsEdgeCases(params: PageParamsQueryModel): void {
+    this.filteredProducts$.pipe(take(1), tap((products) => {
+      const maxPageNumber: number = Math.ceil(
+        products.length / params.pageSize
+             );
+
+      params.pageNumber > maxPageNumber ? this._router.navigate([], {
+        queryParams: {
+          pageNumber: maxPageNumber,
+          pageSize: params.pageSize
+        }
+      }) : params.pageNumber
+    })).subscribe()
   }
 }
