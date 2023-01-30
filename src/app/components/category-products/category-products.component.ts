@@ -19,9 +19,10 @@ import {
 import { SortProductsOptionsQueryModel } from '../../query-models/sort-products-options.query-model';
 import { CategoryModel } from '../../models/category.model';
 import { ProductModel } from '../../models/product.model';
+import { PageParamsQueryModel } from '../../query-models/page-params.query-model';
 import { CategoriesService } from '../../services/categories.service';
 import { ProductsService } from '../../services/products.service';
-import { PageParamsQueryModel } from 'src/app/query-models/page-params.query-model';
+import { FilteredProductQueryModel } from 'src/app/query-models/filtered-product.query-model';
 
 @Component({
   selector: 'app-category-products',
@@ -31,14 +32,17 @@ import { PageParamsQueryModel } from 'src/app/query-models/page-params.query-mod
 })
 export class CategoryProductsComponent {
   readonly sortOption: FormControl = new FormControl('fvDesc');
-  readonly filterByPrice: FormGroup = new FormGroup({
+  readonly filters: FormGroup = new FormGroup({
     priceFrom: new FormControl(),
     priceTo: new FormControl(),
+    stars: new FormControl(),
   });
 
-readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueChanges.pipe(
-  startWith({ priceFrom: 0, priceTo: 9999 }), debounceTime(1000), shareReplay(1)
-);
+  readonly filtersValueChanges$: Observable<any> =
+    this.filters.valueChanges.pipe(
+      startWith({ priceFrom: 0, priceTo: 9999, stars: 'all' }),
+      shareReplay(1)
+    );
 
   readonly sortOptions$: Observable<SortProductsOptionsQueryModel[]> = of([
     { name: 'Featured', value: 'fvDesc' },
@@ -58,15 +62,29 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
       )
     );
 
-  readonly allProductsInCategory$: Observable<ProductModel[]> = combineLatest([
-    this._activatedRoute.params,
-    this._productsService.getAllProducts(),
-  ]).pipe(
-    map(([params, products]: [Params, ProductModel[]]) =>
-      products.filter((product) => product.categoryId === params['categoryId'])
-    ),
-    shareReplay(1)
-  );
+  readonly allProductsInCategory$: Observable<FilteredProductQueryModel[]> =
+    combineLatest([
+      this._activatedRoute.params,
+      this._productsService.getAllProducts(),
+    ]).pipe(
+      map(([params, products]: [Params, ProductModel[]]) =>
+        products
+          .filter((product) => product.categoryId === params['categoryId'])
+          .map((productByCategory) => ({
+            id: productByCategory.id,
+            categoryId: productByCategory.categoryId,
+            storeIds: productByCategory.storeIds,
+            featureValue: productByCategory.featureValue,
+            imageUrl: productByCategory.imageUrl,
+            name: productByCategory.name,
+            price: productByCategory.price,
+            ratingCount: productByCategory.ratingCount,
+            ratingValue: productByCategory.ratingValue,
+            starsNumber: Math.round(productByCategory.ratingValue),
+          }))
+      ),
+      shareReplay(1)
+    );
 
   readonly pageParams$: Observable<PageParamsQueryModel> =
     this._activatedRoute.queryParams.pipe(
@@ -79,17 +97,32 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
       shareReplay(1)
     );
 
+  readonly filteredProducts$: Observable<FilteredProductQueryModel[]> =
+    combineLatest([
+      this.allProductsInCategory$,
+      this.filtersValueChanges$,
+    ]).pipe(
+      map(([products, filters]) =>
+        products
+          .filter((product) =>
+            filters.priceFrom
+              ? product.price >= filters.priceFrom
+              : product.price > 0
+          )
+          .filter((product) =>
+            filters.priceTo
+              ? product.price <= filters.priceTo
+              : product.price < 9999
+          )
 
-
-  readonly filteredProducts$: Observable<ProductModel[]> = combineLatest([
-    this.allProductsInCategory$,
-    this.filterByPriceValueChanges$
-  ]).pipe(map(([products, filters]) =>
-  products
-    .filter((product) => filters.priceFrom ? product.price >= filters.priceFrom : product.price > 0)
-    .filter((product) => filters.priceTo ? product.price <= filters.priceTo : product.price < 9999 )
-  ), shareReplay(1))
-
+          .filter((product) =>
+            filters.stars == 'all'
+              ? product
+              : +filters.stars === product.starsNumber
+          )
+      ),
+      shareReplay(1)
+    );
 
   readonly pageNumbers$: Observable<number[]> = combineLatest([
     this.filteredProducts$,
@@ -102,13 +135,14 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
     })
   );
 
-
-  readonly products$: Observable<ProductModel[]> = combineLatest([
+  readonly products$: Observable<FilteredProductQueryModel[]> = combineLatest([
     this.filteredProducts$,
     this.sortOption.valueChanges.pipe(startWith('fvDesc')),
     this.pageParams$,
   ]).pipe(
-    tap(([products, sortOption, params]) => this._includeParamsEdgeCases(params)),
+    tap(([products, sortOption, params]) =>
+      this._includeParamsEdgeCases(params)
+    ),
     map(([products, sortOption, params]) =>
       products
 
@@ -178,20 +212,25 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
       .subscribe();
   }
 
-
-
   private _includeParamsEdgeCases(params: PageParamsQueryModel): void {
-    this.filteredProducts$.pipe(take(1), tap((products) => {
-      const maxPageNumber: number = Math.ceil(
-        products.length / params.pageSize
-             );
+    this.filteredProducts$
+      .pipe(
+        take(1),
+        tap((products) => {
+          const maxPageNumber: number = Math.ceil(
+            products.length / params.pageSize
+          );
 
-      params.pageNumber > maxPageNumber ? this._router.navigate([], {
-        queryParams: {
-          pageNumber: maxPageNumber,
-          pageSize: params.pageSize
-        }
-      }) : params.pageNumber
-    })).subscribe()
+          params.pageNumber > maxPageNumber
+            ? this._router.navigate([], {
+                queryParams: {
+                  pageNumber: maxPageNumber,
+                  pageSize: params.pageSize,
+                },
+              })
+            : params.pageNumber;
+        })
+      )
+      .subscribe();
   }
 }

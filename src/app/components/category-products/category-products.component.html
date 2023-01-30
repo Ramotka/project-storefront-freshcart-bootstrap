@@ -17,7 +17,7 @@
             <i class="feather-icon icon-chevron-right"></i>
           </li>
         </ul>
-        <form [formGroup]="filterByPrice">
+        <form [formGroup]="filters">
           <h5 class="mt-8 mb-4">Price</h5>
           <input
             type="number"
@@ -30,6 +30,81 @@
             placeholder="Price To"
             class="form-control"
           />
+
+          <div class="mb-2 d-flex flex-column">
+            <h5 class="mt-8 mb-4">Rating</h5>
+
+            <div class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                value="all"
+                formControlName="stars"
+              />
+              <div class="form-check-label">All</div>
+            </div>
+
+            <div class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                value="5"
+                formControlName="stars"
+              />
+              <div class="form-check-label">
+                <i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning"></i>
+              </div>
+            </div>
+            <div class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                value="4"
+                formControlName="stars"
+              />
+              <div class="form-check-label">
+                <i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star text-warning"></i>
+              </div>
+            </div>
+            <div class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                value="3"
+                formControlName="stars"
+              />
+              <div class="form-check-label">
+                <i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star text-warning me-1"></i
+                ><i class="bi bi-star text-warning"></i>
+              </div>
+            </div>
+            <div class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                value="2"
+                formControlName="stars"
+              />
+              <div class="form-check-label">
+                <i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star-fill text-warning me-1"></i
+                ><i class="bi bi-star text-warning me-1"></i
+                ><i class="bi bi-star text-warning me-1"></i
+                ><i class="bi bi-star text-warning"></i>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
       <div
@@ -46,7 +121,9 @@
             <div class="d-lg-flex justify-content-between align-items-center">
               <div class="mb-3 mb-lg-0">
                 <p class="mb-0">
-                  <span class="text-success">{{ filteredProducts.length }}</span>
+                  <span class="text-success">{{
+                    filteredProducts.length
+                  }}</span>
                   Products found
                 </p>
               </div>
@@ -91,15 +168,59 @@
                           {{ item.name }}
                         </h2>
                         <div>
-                          <!-- rating --><small class="text-warning">
+                          <!-- rating -->
+                          <small
+                            *ngIf="item.starsNumber === 1"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 2"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 3"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 4"
+                            class="text-warning"
+                          >
                             <i class="bi bi-star-fill"></i>
                             <i class="bi bi-star-fill"></i>
                             <i class="bi bi-star-fill"></i>
                             <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-half"></i
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 5"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i
                           ></small>
                           <span class="text-muted small"
-                            >{{ item.ratingValue }}({{
+                            >{{ item.starsNumber }}({{
                               item.ratingCount
                             }})</span
                           >
