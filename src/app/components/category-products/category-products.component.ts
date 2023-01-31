@@ -114,7 +114,7 @@ export class CategoryProductsComponent {
             categoryId: productByCategory.categoryId,
             storeIds: productByCategory.storeIds,
             featureValue: productByCategory.featureValue,
-            imageUrl: productByCategory.imageUrl,
+            imageUrl: productByCategory.imageUrl.substring(1),
             name: productByCategory.name,
             price: productByCategory.price,
             ratingCount: productByCategory.ratingCount,
