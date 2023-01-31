@@ -5,10 +5,8 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { Observable, combineLatest, from, of } from 'rxjs';
+import { Observable, combineLatest, of } from 'rxjs';
 import {
-  debounceTime,
-  filter,
   map,
   shareReplay,
   startWith,
@@ -18,10 +16,14 @@ import {
 } from 'rxjs/operators';
 import { SortProductsOptionsQueryModel } from '../../query-models/sort-products-options.query-model';
 import { CategoryModel } from '../../models/category.model';
+import { StoreModel } from '../../models/store.model';
+import { FilteredProductQueryModel } from '../../query-models/filtered-product.query-model';
 import { ProductModel } from '../../models/product.model';
+import { PageParamsQueryModel } from '../../query-models/page-params.query-model';
 import { CategoriesService } from '../../services/categories.service';
 import { ProductsService } from '../../services/products.service';
-import { PageParamsQueryModel } from 'src/app/query-models/page-params.query-model';
+import { StoresService } from '../../services/stores.service';
+import { RatingStarsQueryModel } from 'src/app/query-models/rating-stars.query-model';
 
 @Component({
   selector: 'app-category-products',
@@ -31,14 +33,23 @@ import { PageParamsQueryModel } from 'src/app/query-models/page-params.query-mod
 })
 export class CategoryProductsComponent {
   readonly sortOption: FormControl = new FormControl('fvDesc');
-  readonly filterByPrice: FormGroup = new FormGroup({
+  readonly filters: FormGroup = new FormGroup({
     priceFrom: new FormControl(),
     priceTo: new FormControl(),
+    stars: new FormControl('all'),
   });
+  readonly storeCheckboxes: FormGroup = new FormGroup({});
+  readonly searchByStore: FormControl = new FormControl('');
 
-readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueChanges.pipe(
-  startWith({ priceFrom: 0, priceTo: 9999 }), debounceTime(1000), shareReplay(1)
-);
+  readonly filtersValueChanges$: Observable<any> =
+    this.filters.valueChanges.pipe(
+      startWith({
+        priceFrom: 0,
+        priceTo: 9999,
+        stars: 'all',
+      }),
+      shareReplay(1)
+    );
 
   readonly sortOptions$: Observable<SortProductsOptionsQueryModel[]> = of([
     { name: 'Featured', value: 'fvDesc' },
@@ -46,10 +57,42 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
     { name: 'Price: High to Low', value: 'priceDesc' },
     { name: 'Avg. Rating', value: 'rvDesc' },
   ]);
+
+  readonly ratingStars$: Observable<RatingStarsQueryModel[]> = of([
+    { id: '1', value: 5, starTypes: [1, 1, 1, 1, 1] },
+    { id: '2', value: 4, starTypes: [1, 1, 1, 1, 0] },
+    { id: '3', value: 3, starTypes: [1, 1, 1, 0, 0] },
+    { id: '4', value: 2, starTypes: [1, 1, 0, 0, 0] },
+  ]);
+
   readonly pageSizes$: Observable<number[]> = of([5, 10, 15]);
 
   readonly allCategories$: Observable<CategoryModel[]> =
     this._categoriesService.getAllCategories();
+
+  readonly allStores$: Observable<StoreModel[]> = combineLatest([
+    this._storesService.getAllStores(),
+    this.searchByStore.valueChanges.pipe(startWith('')),
+  ]).pipe(
+    map(([stores, search]) =>
+      stores.filter((store) =>
+        search ? store.name.toLowerCase().includes(search.toLowerCase()) : store
+      )
+    ),
+    tap((stores: StoreModel[]) =>
+      stores.forEach((store: StoreModel) =>
+        this.storeCheckboxes.addControl(store.id, new FormControl(false))
+      )
+    ),
+    shareReplay(1)
+  );
+
+  readonly storeCheckboxesValues$: Observable<string[]> =
+    this.storeCheckboxes.valueChanges.pipe(
+      startWith({}),
+      map((form) => Object.keys(form).filter((k) => form[k] === true)),
+      shareReplay(1)
+    );
 
   readonly categoryDetails$: Observable<CategoryModel> =
     this._activatedRoute.params.pipe(
@@ -58,15 +101,29 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
       )
     );
 
-  readonly allProductsInCategory$: Observable<ProductModel[]> = combineLatest([
-    this._activatedRoute.params,
-    this._productsService.getAllProducts(),
-  ]).pipe(
-    map(([params, products]: [Params, ProductModel[]]) =>
-      products.filter((product) => product.categoryId === params['categoryId'])
-    ),
-    shareReplay(1)
-  );
+  readonly allProductsInCategory$: Observable<FilteredProductQueryModel[]> =
+    combineLatest([
+      this._activatedRoute.params,
+      this._productsService.getAllProducts(),
+    ]).pipe(
+      map(([params, products]: [Params, ProductModel[]]) =>
+        products
+          .filter((product) => product.categoryId === params['categoryId'])
+          .map((productByCategory) => ({
+            id: productByCategory.id,
+            categoryId: productByCategory.categoryId,
+            storeIds: productByCategory.storeIds,
+            featureValue: productByCategory.featureValue,
+            imageUrl: productByCategory.imageUrl.substring(1),
+            name: productByCategory.name,
+            price: productByCategory.price,
+            ratingCount: productByCategory.ratingCount,
+            ratingValue: productByCategory.ratingValue,
+            starsNumber: Math.round(productByCategory.ratingValue),
+          }))
+      ),
+      shareReplay(1)
+    );
 
   readonly pageParams$: Observable<PageParamsQueryModel> =
     this._activatedRoute.queryParams.pipe(
@@ -79,17 +136,41 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
       shareReplay(1)
     );
 
+  readonly filteredProducts$: Observable<FilteredProductQueryModel[]> =
+    combineLatest([
+      this.allProductsInCategory$,
+      this.filtersValueChanges$,
 
+      this.storeCheckboxesValues$,
+    ]).pipe(
+      map(([products, filters, checkboxes]) =>
+        products
+          .filter((product) =>
+            filters.priceFrom
+              ? product.price >= filters.priceFrom
+              : product.price > 0
+          )
+          .filter((product) =>
+            filters.priceTo
+              ? product.price <= filters.priceTo
+              : product.price < 9999
+          )
 
-  readonly filteredProducts$: Observable<ProductModel[]> = combineLatest([
-    this.allProductsInCategory$,
-    this.filterByPriceValueChanges$
-  ]).pipe(map(([products, filters]) =>
-  products
-    .filter((product) => filters.priceFrom ? product.price >= filters.priceFrom : product.price > 0)
-    .filter((product) => filters.priceTo ? product.price <= filters.priceTo : product.price < 9999 )
-  ), shareReplay(1))
+          .filter((product) =>
+            filters.stars == 'all'
+              ? product
+              : +filters.stars === product.starsNumber
+          )
 
+          .filter(
+            (product) =>
+              !checkboxes.length ||
+              checkboxes.filter((storeId) => product.storeIds.includes(storeId))
+                .length
+          )
+      ),
+      shareReplay(1)
+    );
 
   readonly pageNumbers$: Observable<number[]> = combineLatest([
     this.filteredProducts$,
@@ -102,13 +183,14 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
     })
   );
 
-
-  readonly products$: Observable<ProductModel[]> = combineLatest([
+  readonly products$: Observable<FilteredProductQueryModel[]> = combineLatest([
     this.filteredProducts$,
     this.sortOption.valueChanges.pipe(startWith('fvDesc')),
     this.pageParams$,
   ]).pipe(
-    tap(([products, sortOption, params]) => this._includeParamsEdgeCases(params)),
+    tap(([products, sortOption, params]) =>
+      this._includeParamsEdgeCases(params)
+    ),
     map(([products, sortOption, params]) =>
       products
 
@@ -141,7 +223,8 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
     private _categoriesService: CategoriesService,
     private _activatedRoute: ActivatedRoute,
     private _productsService: ProductsService,
-    private _router: Router
+    private _router: Router,
+    private _storesService: StoresService
   ) {}
 
   selectPageNumber(pageNumber: number): void {
@@ -178,20 +261,45 @@ readonly filterByPriceValueChanges$: Observable<any> = this.filterByPrice.valueC
       .subscribe();
   }
 
-
-
   private _includeParamsEdgeCases(params: PageParamsQueryModel): void {
-    this.filteredProducts$.pipe(take(1), tap((products) => {
-      const maxPageNumber: number = Math.ceil(
-        products.length / params.pageSize
-             );
+    const pageSizeParams: number = params['pageSize'];
+    const pageNumberParams: number = params['pageNumber'];
+    const result: number = Math.round(pageSizeParams / 5) * 5;
 
-      params.pageNumber > maxPageNumber ? this._router.navigate([], {
-        queryParams: {
-          pageNumber: maxPageNumber,
-          pageSize: params.pageSize
-        }
-      }) : params.pageNumber
-    })).subscribe()
+    this._router.navigate([], {
+      queryParams: {
+        pageNumber: pageNumberParams ? Math.round(pageNumberParams) : [],
+        pageSize: pageSizeParams ? Math.min(Math.max(5, result), 15) : [],
+      },
+    });
+
+    pageNumberParams < 1
+      ? this._router.navigate([], {
+          queryParams: {
+            pageNumber: 1,
+            pageSize: pageSizeParams,
+          },
+        })
+      : pageNumberParams;
+
+    this.filteredProducts$
+      .pipe(
+        take(1),
+        tap((products) => {
+          const maxPageNumber: number = Math.ceil(
+            products.length / pageSizeParams
+          );
+
+          pageNumberParams > maxPageNumber
+            ? this._router.navigate([], {
+                queryParams: {
+                  pageNumber: maxPageNumber,
+                  pageSize: pageSizeParams,
+                },
+              })
+            : pageNumberParams;
+        })
+      )
+      .subscribe();
   }
 }

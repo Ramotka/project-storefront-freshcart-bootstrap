@@ -17,7 +17,27 @@
             <i class="feather-icon icon-chevron-right"></i>
           </li>
         </ul>
-        <form [formGroup]="filterByPrice">
+        <h5 class="mt-8 mb-4">Stores</h5>
+        <input
+          type="text"
+          [formControl]="searchByStore"
+          placeholder="Search by Store"
+          class="form-control mb-4"
+        />
+        <form [formGroup]="storeCheckboxes">
+          <div *ngFor="let item of allStores$ | async" class="form-check mb-2">
+            <input
+              [id]="item.id"
+              class="form-check-input"
+              type="checkbox"
+              [formControlName]="item.id"
+              [value]="item.id"
+            /><label [for]="item.id" class="form-check-label">{{
+              item.name
+            }}</label>
+          </div>
+        </form>
+        <form [formGroup]="filters">
           <h5 class="mt-8 mb-4">Price</h5>
           <input
             type="number"
@@ -30,6 +50,40 @@
             placeholder="Price To"
             class="form-control"
           />
+
+          <div class="mb-2 d-flex flex-column">
+            <h5 class="mt-8 mb-4">Rating</h5>
+
+            <div class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                value="all"
+                formControlName="stars"
+              />
+              <!-- 'All' option added to allow user to see again all products -->
+              <div class="form-check-label">All</div>
+            </div>
+
+            <div *ngFor="let star of ratingStars$ | async" class="d-flex mb-1">
+              <input
+                class="form-check-input me-3"
+                type="radio"
+                [value]="star.value"
+                formControlName="stars"
+              />
+              <div class="form-check-label">
+                <i
+                  *ngFor="let item of star.starTypes"
+                  class="bi text-warning me-1"
+                  [ngClass]="{
+                    'bi-star-fill': item === 1,
+                    'bi-star': item === 0
+                  }"
+                ></i>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
       <div
@@ -46,7 +100,9 @@
             <div class="d-lg-flex justify-content-between align-items-center">
               <div class="mb-3 mb-lg-0">
                 <p class="mb-0">
-                  <span class="text-success">{{ filteredProducts.length }}</span>
+                  <span class="text-success">{{
+                    filteredProducts.length
+                  }}</span>
                   Products found
                 </p>
               </div>
@@ -91,15 +147,59 @@
                           {{ item.name }}
                         </h2>
                         <div>
-                          <!-- rating --><small class="text-warning">
+                          <!-- rating -->
+                          <small
+                            *ngIf="item.starsNumber === 1"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 2"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 3"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star"></i>
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 4"
+                            class="text-warning"
+                          >
                             <i class="bi bi-star-fill"></i>
                             <i class="bi bi-star-fill"></i>
                             <i class="bi bi-star-fill"></i>
                             <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-half"></i
+                            <i class="bi bi-star"></i
+                          ></small>
+                          <small
+                            *ngIf="item.starsNumber === 5"
+                            class="text-warning"
+                          >
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i
                           ></small>
                           <span class="text-muted small"
-                            >{{ item.ratingValue }}({{
+                            >{{ item.starsNumber }}({{
                               item.ratingCount
                             }})</span
                           >
