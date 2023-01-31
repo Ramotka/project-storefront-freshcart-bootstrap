@@ -37,8 +37,10 @@ export class CategoryProductsComponent {
   readonly filters: FormGroup = new FormGroup({
     priceFrom: new FormControl(),
     priceTo: new FormControl(),
-    stars: new FormControl(),
+    stars: new FormControl('all'),
   });
+
+  readonly searchByStore: FormControl = new FormControl('');
 
   readonly filtersValueChanges$: Observable<any> =
     this.filters.valueChanges.pipe(
@@ -57,8 +59,22 @@ export class CategoryProductsComponent {
   readonly allCategories$: Observable<CategoryModel[]> =
     this._categoriesService.getAllCategories();
 
-  readonly allStores$: Observable<StoreModel[]> =
-    this._storesService.getAllStores();
+  readonly allStores$: Observable<StoreModel[]> = this._storesService
+    .getAllStores()
+    .pipe(shareReplay(1));
+
+  readonly searchByStoreValueChanges$: Observable<string[]> = combineLatest([
+    this.searchByStore.valueChanges.pipe(debounceTime(1000), startWith('')),
+    this.allStores$,
+  ]).pipe(
+    map(([searchName, stores]) =>
+      stores
+        .filter((store) =>
+          store.name.toLowerCase().includes(searchName.toLowerCase())
+        )
+        .map((data) => data.id)
+    )
+  );
 
   readonly categoryDetails$: Observable<CategoryModel> =
     this._activatedRoute.params.pipe(
@@ -106,8 +122,9 @@ export class CategoryProductsComponent {
     combineLatest([
       this.allProductsInCategory$,
       this.filtersValueChanges$,
+      this.searchByStoreValueChanges$,
     ]).pipe(
-      map(([products, filters]) =>
+      map(([products, filters, storesIds]) =>
         products
           .filter((product) =>
             filters.priceFrom
@@ -124,6 +141,10 @@ export class CategoryProductsComponent {
             filters.stars == 'all'
               ? product
               : +filters.stars === product.starsNumber
+          )
+
+          .filter((product) =>
+            product.storeIds.some((item) => storesIds.includes(item))
           )
       ),
       shareReplay(1)

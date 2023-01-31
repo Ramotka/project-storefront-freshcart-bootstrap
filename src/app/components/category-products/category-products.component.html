@@ -18,6 +18,12 @@
           </li>
         </ul>
         <h5 class="mt-8 mb-4">Stores</h5>
+        <input
+          type="text"
+          [formControl]="searchByStore"
+          placeholder="Search by Store"
+          class="form-control mb-4"
+        />
         <div *ngFor="let item of allStores$ | async" class="form-check mb-2">
           <input
             [id]="item.id"
