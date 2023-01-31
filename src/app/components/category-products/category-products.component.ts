@@ -18,11 +18,13 @@ import {
 } from 'rxjs/operators';
 import { SortProductsOptionsQueryModel } from '../../query-models/sort-products-options.query-model';
 import { CategoryModel } from '../../models/category.model';
+import { FilteredProductQueryModel } from '../../query-models/filtered-product.query-model';
 import { ProductModel } from '../../models/product.model';
 import { PageParamsQueryModel } from '../../query-models/page-params.query-model';
+import { StoreModel } from '../../models/store.model';
 import { CategoriesService } from '../../services/categories.service';
 import { ProductsService } from '../../services/products.service';
-import { FilteredProductQueryModel } from 'src/app/query-models/filtered-product.query-model';
+import { StoresService } from '../../services/stores.service';
 
 @Component({
   selector: 'app-category-products',
@@ -54,6 +56,9 @@ export class CategoryProductsComponent {
 
   readonly allCategories$: Observable<CategoryModel[]> =
     this._categoriesService.getAllCategories();
+
+  readonly allStores$: Observable<StoreModel[]> =
+    this._storesService.getAllStores();
 
   readonly categoryDetails$: Observable<CategoryModel> =
     this._activatedRoute.params.pipe(
@@ -175,7 +180,8 @@ export class CategoryProductsComponent {
     private _categoriesService: CategoriesService,
     private _activatedRoute: ActivatedRoute,
     private _productsService: ProductsService,
-    private _router: Router
+    private _router: Router,
+    private _storesService: StoresService
   ) {}
 
   selectPageNumber(pageNumber: number): void {
